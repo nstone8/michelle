@@ -13,7 +13,7 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 # The ID and range of a sample spreadsheet.
 SAMPLE_SPREADSHEET_ID = '1pCLpRQlAclu3I6od-C1gUeZsOhkaOwHEOy-bzrnY80A'
 #SAMPLE_RANGE_NAME = 'Class Data!A2:E'
-
+creds=None
 if os.path.exists('token.pickle'):
     with open('token.pickle', 'rb') as token:
         creds = pickle.load(token)
@@ -117,6 +117,7 @@ for s in suppliers:
     quants=this_supplier.loc[:,'qty']
     unit_prices=this_supplier.loc[:,'unit_cost']
     extensions=this_supplier.loc[:,'total_cost']
+    bp=this_supplier.loc[:,'business_purpose']
 
     if len(item_numbers)>len(item_no_cells):
         raise Exception('Too many items to fit on one form for supplier {}'.format(s))
@@ -141,5 +142,7 @@ for s in suppliers:
             ext=ext[1:]
         sheet[ext_cell].value=float(ext)
 
+    #fill in business purpose
+    sheet['E47'].value=', '.join(bp)
     wb.save(os.path.join('Order_sheets','{} order.xlsx'.format(s)))
         
