@@ -65,6 +65,22 @@ for v in values:
     unit_size.append(v[10])
     ordered.append(v[11])
     received.append(v[12])
+
+    new_total_cost=[]
+    for t in total_cost:
+        if t:
+            if t[0]=='$':
+                t=t[1:]
+        else:
+            t=None
+        try:
+            t=float(t)
+        except ValueError:
+            t=None
+        except TypeError:
+            t=None
+        new_total_cost.append(t)
+        
     try:
         ordered_for.append(v[13])
     except IndexError:
@@ -73,7 +89,7 @@ for v in values:
         notes.append(v[14])
     except IndexError:
         notes.append(None)
-
+total_cost=new_total_cost
 frame=pd.DataFrame(dict(
     date=date,
     project=project,
@@ -111,14 +127,18 @@ for s in suppliers:
     quant_cells=['N'+str(r) for r in range(22,37)]
     unit_price_cells=['P'+str(r) for r in range(22,37)]
     ext_cells=['S'+str(r) for r in range(22,37)]
-
+    account_cells=['B'+str(r) for r in range(53,58)]
+    cost_cells=['D'+str(r) for r in range(53,58)]
+    
     item_numbers=this_supplier.loc[:,'product_no']
     descriptions=this_supplier.loc[:,'description']
     quants=this_supplier.loc[:,'qty']
     unit_prices=this_supplier.loc[:,'unit_cost']
     extensions=this_supplier.loc[:,'total_cost']
     bp=this_supplier.loc[:,'business_purpose']
-
+    account_cost=this_supplier.loc[:,['project','total_cost']].groupby('project').agg(sum).reset_index()
+    accounts=account_cost.loc[:,'project']
+    costs=account_cost.loc[:,'total_cost']
     if len(item_numbers)>len(item_no_cells):
         raise Exception('Too many items to fit on one form for supplier {}'.format(s))
 
@@ -138,10 +158,14 @@ for s in suppliers:
         sheet[uprice_cell].value=float(uprice)
 
     for ext_cell,ext in zip(ext_cells,extensions):
-        if ext[0]=='$':
-            ext=ext[1:]
-        sheet[ext_cell].value=float(ext)
+        sheet[ext_cell].value=ext
 
+    for account_cell,account in zip(account_cells,accounts):
+        sheet[account_cell].value=account
+
+    for cost_cell,cost in zip(cost_cells,costs):
+        sheet[cost_cell].value=cost
+        
     #fill in business purpose
     sheet['E47'].value=', '.join(bp)
     wb.save(os.path.join('Order_sheets','{} order.xlsx'.format(s)))
