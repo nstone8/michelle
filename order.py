@@ -6,6 +6,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import openpyxl
 import time
+import datetime
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
@@ -47,6 +48,7 @@ unit_cost=[]
 total_cost=[]
 unit_count=[]
 unit_size=[]
+need_date=[]
 ordered=[]
 received=[]
 ordered_for=[]
@@ -63,8 +65,9 @@ for v in values:
     total_cost.append(v[8])
     unit_count.append(v[9])
     unit_size.append(v[10])
-    ordered.append(v[11])
-    received.append(v[12])
+    need_date.append(v[11])
+    ordered.append(v[12])
+    received.append(v[13])
 
     new_total_cost=[]
     for t in total_cost:
@@ -102,6 +105,7 @@ frame=pd.DataFrame(dict(
     total_cost=total_cost,
     unit_count=unit_count,
     unit_size=unit_size,
+    need_date=need_date,
     ordered=ordered,
     received=received,
     ordered_for=ordered_for,
@@ -122,6 +126,7 @@ for s in suppliers:
     sheet['K8'].value=date_str
     #fill in vendor
     sheet['B14'].value=s
+    #fill in date needed
     item_no_cells=['C'+str(r) for r in range(22,37)]
     descr_cells=['D'+str(r) for r in range(22,37)]
     quant_cells=['N'+str(r) for r in range(22,37)]
@@ -139,6 +144,19 @@ for s in suppliers:
     account_cost=this_supplier.loc[:,['project','total_cost']].groupby('project').agg(sum).reset_index()
     accounts=account_cost.loc[:,'project']
     costs=account_cost.loc[:,'total_cost']
+    date_needed=this_supplier.loc[:,'need_date']
+    these_dates=[]
+    for date in date_needed:
+    	if not date: continue
+    	this_month,this_day,this_year=date.split('/')
+    	this_date=datetime.date(month=int(this_month),day=int(this_day),year=2000+int(this_year))
+    	these_dates.append(time.mktime(this_date.timetuple()))
+    if these_dates:
+    	date_needed_str=time.strftime('%m/%d/%Y',time.localtime(min(these_dates)))
+    else:
+    	date_needed_sec=time.time()+14*24*60*60
+    	date_needed_str=time.strftime('%m/%d/%Y',time.localtime(date_needed_sec))
+    sheet['N37'].value=date_needed_str
     if len(item_numbers)>len(item_no_cells):
         raise Exception('Too many items to fit on one form for supplier {}'.format(s))
 
